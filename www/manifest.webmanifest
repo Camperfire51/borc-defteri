@@ -1,0 +1,19 @@
+{
+  "id": "./",
+  "name": "Borç Defteri",
+  "short_name": "Borç",
+  "description": "Kimden ne aldığını/verdiğini, ürün ve gramaj/adet kuralıyla tutan, çevrimdışı çalışan borç defteri.",
+  "lang": "tr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#16110d",
+  "theme_color": "#16110d",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

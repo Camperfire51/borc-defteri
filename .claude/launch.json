@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "borc-defteri",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["--yes", "http-server", "www", "-p", "8127", "-c-1"],
+      "port": 8127
+    }
+  ]
+}
