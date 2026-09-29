@@ -5,11 +5,13 @@ CLAUDE.md dosyasını otomatik okur.
 
 ## Proje nedir
 Tek dosyalık, tamamen çevrimdışı çalışan bir "borç defteri" uygulaması.
-Kimden hangi ürünü/borcu aldığını ya da kime verdiğini not eder; otomatik zaman damgası
-uygular; borcun tahsil/teslim edilmesini ayrı bir zaman damgasıyla "kapandı" olarak işaretler.
+Kim kime hangi ürünü verdi, onu not eder; otomatik zaman damgası uygular; kaydın
+kapanmasını (tahsil/teslim) ayrı bir zaman damgasıyla "kapandı" olarak işaretler.
+İleride KuyumHUB'ın bir parçası olacak; şimdilik standalone ve çevrimdışı gelişir.
 
-Her kayıt: yön (Verdim = Alacak / Aldım = Borç), kişi, ürün, miktar (ürün kuralına göre
-küsürlü gramaj ya da tam sayı), (opsiyonel) not, durum (Açık/Kapandı) ve zaman damgaları tutar.
+Her kayıt: kimden (veren) → kime (alan), ürün, miktar (ürün kuralına göre küsürlü gramaj ya da
+tam sayı), (opsiyonel) not, durum (Açık/Kapandı/Silindi), zaman damgaları ve düzenleme sürümlerini
+tutar. Arayüz kaydı tek cümle olarak gösterir: **"Hasan'dan Ayşen'e 1,5 gram 24 Ayar Külçe"**.
 Capacitor ile tek kod tabanından Android ve iOS'a paketlenir. Aynı `www/` klasörü GitHub Pages'te
 kurulabilir bir PWA olarak da yayınlanır: https://camperfire51.github.io/borc-defteri/
 
@@ -28,15 +30,39 @@ kurulabilir bir PWA olarak da yayınlanır: https://camperfire51.github.io/borc-
 
 ## Veri modeli
 localStorage'ta üç anahtar:
-- `borc-defteri:entries` — kayıtlar: `{ id, direction:"verdim"|"aldim", personId, personName,
-  productId, productName, unit, decimal, qty, note, status:"acik"|"kapandi", createdAt,
-  settledAt?, updatedAt? }`. `personName/productName/unit/decimal` snapshot olarak saklanır;
-  böylece ilgili kişi/ürün silinse bile kayıt doğru görüntülenir.
+- `borc-defteri:entries` — kayıtlar: `{ id, fromId, fromName, toId, toName,
+  productId, productName, unit, decimal, qty, note, status:"acik"|"kapandi"|"silindi", createdAt,
+  settledAt?, updatedAt?, deletedAt?, history? }`. `fromName/toName/productName/unit/decimal`
+  snapshot olarak saklanır; böylece ilgili kişi/ürün silinse bile kayıt doğru görüntülenir.
+  - `history` — önceki sürümler, eskiden yeniye: `[{ at, ...VERSION_FIELDS }]`. `at` o sürümün
+    oluştuğu an (ilk sürümde `createdAt`, sonrakilerde düzenleme zamanı). Her düzenlemede mevcut
+    hal buraya eklenir; sürüm sınırı yok, hiçbir sürüm silinmez.
 - `borc-defteri:people` — kişiler: `{ id, name, phone }`
 - `borc-defteri:products` — ürünler: `{ id, name, unit, decimal }`. `decimal=true` küsürlü
-  gramaja (örn. bilezik), `decimal=false` tam sayı zorunluluğuna (örn. külçe altın) karşılık gelir.
+  gramaja (virgülden sonra en fazla 2 basamak, `QTY_DECIMALS`), `decimal=false` tam sayıya karşılık gelir.
 
-Yön semantiği: **Verdim → Alacak (yeşil)**, **Aldım → Borç (kırmızı)**.
+Taraflar: `fromId`/`toId` bir kişi id'sidir; veren ve alan aynı olamaz. Hazır kişi/ürün YOK —
+her kurulum boş başlar ("Ben" gibi yerleşik bir taraf da yok).
+
+Eski kayıtlar (`direction:"verdim"|"aldim"` + `personId/personName`) `normalizeEntry` ile
+yüklenirken ve JSON içe aktarılırken çevrilir: **verdim → Ben'den kişiye**, **aldim → kişiden Ben'e**.
+`ME_ID` (`"me"`, adı "Ben") yalnızca bu eski kayıtlar için vardır; seçicilerde çıkmaz.
+
+Cümle: `whoText`/`whoHTML` + `trSuffix` Türkçe ayrılma/yönelme eklerini üretir
+(Hasan'dan, Mehmet'ten, Ayşen'e, Ali'ye; eski kayıtlarda "Benden"/"bana"). `sentenceText` tüm çıktılarda kullanılır.
+
+Kayıt kuralları:
+- **Kalıcı silme yok.** Sil → `status:"silindi"` + `deletedAt`. Silinen kayıt Defter/Liste'de
+  görünmez (`liveEntries`), okunabilir çıktıda "Silindi" olarak bütün sürümleriyle kalır.
+  Numara (#N / "Kayıt N") tüm kayıtlar içindeki sıradır, silinenler de sayılır.
+- **Kapatma nihaidir:** kapanan kayıt yeniden açılamaz ve düzenlenemez (silinen de düzenlenemez).
+  Düğmeler gizli, `startEdit`/`addOrUpdate`/`doSettle` da engeller. Geri alınamayan Kapat ve Sil
+  önce onay satırı gösterir (`state.confirm`, `actionsHTML`/`wireActions`).
+- Önceki sürümler yalnızca okunabilir çıktıda (metin, yazdırma, PDF) görünür; üçü de `recordDoc`'tan beslenir.
+- Kişi ve ürün adları tekildir (`findByName`: boşluk sadeleştirilir, büyük/küçük harf farkı sayılmaz).
+  JSON içe aktarmada aynı adlı kişi/ürün eklenmez, kayıtlar mevcut olana bağlanır.
+- Yeni sekmesinde kaydın sonucu büyük bildirimle (`popup`) gösterilir: yeşil tik ya da nedenleriyle
+  kırmızı çarpı. Başarılı kayıttan sonra form tamamen sıfırlanır.
 
 ## Önemli kurallar (Claude Code bunlara uymalı)
 - Tüm uygulama mantığı `www/index.html` içindedir; değişiklikleri orada yap.
@@ -45,10 +71,11 @@ Yön semantiği: **Verdim → Alacak (yeşil)**, **Aldım → Borç (kırmızı)
 - Veri yalnızca `localStorage`'ta saklanır (yukarıdaki üç anahtar).
 - Arayüz dili Türkçe. Mevcut tasarım dilini (koyu tema + altın vurgu) koru.
 - Bir kayda yeni bir alan eklerken şu yerleri birlikte güncelle: (1) form `renderYeni` +
-  `wireYeni`, (2) doğrulama + `addOrUpdate` (+`startEdit`), (3) Defter sayfası `paintPage`,
-  (4) Liste kartı + arama `getFiltered`/`renderListItems`, (5) okunabilir çıktı
-  `toReadableText`, yazdırma `refreshPrintArea`, PDF `recordsToPdfImages` ve JSON `doImport`.
-- Ürün/kişi kurallarını değiştirirken `renderAyarlar`/`wireAyarlar` ile `defaultProducts`'ı gözden geçir.
+  `wireYeni` (+ önizleme `previewHTML`, `blankForm`), (2) doğrulama + `addOrUpdate` (+`startEdit`),
+  düzenlenebilir bir alansa `VERSION_FIELDS`, (3) Defter sayfası `paintPage`,
+  (4) Liste kartı + arama `getFiltered`/`renderListItems`, (5) okunabilir çıktının ortak içeriği
+  `recordDoc` (metin `toReadableText`, yazdırma `refreshPrintArea`, PDF `recordsToPdfImages`) ve JSON `doImport`.
+- Ürün/kişi kurallarını değiştirirken `renderAyarlar`/`wireAyarlar`/`addPerson`/`addProduct`'ı gözden geçir.
 - Değişiklikten sonra native'e yansıtmak için `npx cap sync` çalıştır.
 - Web sürümü `github.io/borc-defteri/` alt yolunda çalışır: `www/` içindeki tüm yollar GÖRELİ olmalı
   (`/icons/x.png` değil `icons/x.png`).
@@ -81,5 +108,6 @@ npx cap sync
 - Bu uygulama ağ kullanmaz; istemediğin sürece ağ kodu ekletme. (Tek istisna: web sürümünde
   `sw.js` uygulamanın kendi dosyalarını önbelleğe alır.)
 - Web'e yayın: `main` dalına push → GitHub Actions ~1 dk içinde siteyi günceller.
-- Eski kayıtlar yeni alanlar olmadan da çalışmalı (alanlar opsiyonel ele alınmalı).
-- İlk açılışta `products` anahtarı yoksa örnek ürünler (Bilezik, Çeyrek Altın, Külçe…) seed edilir.
+- Eski kayıtlar yeni alanlar olmadan da çalışmalı (alanlar opsiyonel ele alınmalı). Eski kayıtlarda
+  3 ondalık basamak olabilir; gösterimde yuvarlanmaz, düzenlenirken 2 basamağa indirilmesi istenir.
+- İlk açılışta hiçbir şey seed edilmez; kişiler ve ürünler Ayarlar'dan eklenir.

@@ -6,16 +6,25 @@ tüm dosyalar uygulamanın içine paketlenir, hiçbir sunucuya ya da internete b
 Veriler cihazda kalıcı olarak saklanır.
 
 ## Ne yapar
-Kimden hangi ürünü/borcu **aldığınızı** ya da kime **verdiğinizi** kaydeder, otomatik zaman
-damgası uygular. Borç tahsil/teslim edildiğinde tek dokunuşla **Kapandı** olarak işaretlenir
-ve kapanış zamanı da kaydedilir.
+**Kim kime hangi ürünü verdi**, onu kaydeder ve otomatik zaman damgası uygular. Her kayıt tek
+cümle olarak okunur: **"Hasan'dan Ayşen'e 1,5 gram 24 Ayar Külçe"**. Kayıt tahsil/teslim
+edildiğinde tek dokunuşla **Kapandı** olarak işaretlenir ve kapanış zamanı da kaydedilir.
 
-- **Yeni:** Yön (Verdim = Alacak / Aldım = Borç) seç, kişi ve ürün seç, miktarı gir, kaydet.
+- **Yeni:** Kimden (veren) ve Kime (alan) seç, ürünü ve miktarı gir. Kayıt kaydetmeden önce
+  cümle olarak önizlenir; **Yer değiştir** ile veren/alan tek dokunuşla ters çevrilir.
+  Kaydedince büyük bir **yeşil tik**, kaydedilemezse nedenleriyle **kırmızı çarpı** çıkar;
+  başarılı kayıttan sonra form tamamen temizlenir.
 - **Defter:** Kayıtları sayfa sayfa çevirerek gör; oradan da kapat/düzenle.
-- **Liste:** Ara, duruma (Açık/Kapandı) ve yöne (Alacak/Borç) göre filtrele, tahsil et / sil.
-- **Ayarlar:** Kişileri ve ürünleri yönet. Her ürün için miktar kuralı:
-  **Küsürlü** (örn. bilezik → gram) ya da **Tam sayı** (örn. 24 ayar külçe → adet).
-- **Yedek:** Okunabilir çıktı, PDF paylaş/indir, JSON yedekle/geri yükle.
+- **Liste:** Kişi, ürün ya da nota göre ara, duruma (Açık/Kapandı) göre filtrele, kapat / sil.
+- **Düzenleme, kapatma ve silme:** Açık kayıt sınırsız düzenlenebilir; her önceki hali tarihiyle
+  saklanır. **Kapatma kesin karardır:** onaydan sonra kayıt bir daha açılamaz ve düzenlenemez.
+  Silinen kayıt yok olmaz, Defter/Liste'den kalkar ama okunabilir çıktıda **Silindi** olarak
+  (bütün sürümleriyle) durur.
+- **Ayarlar:** Kişileri ve ürünleri yönet (aynı isim iki kez eklenemez). Hazır kişi/ürün yoktur.
+  Her ürün için miktar kuralı: **Küsürlü** (gram; virgülden sonra en fazla 2 basamak) ya da
+  **Tam sayı** (adet).
+- **Yedek:** Okunabilir çıktı (silinenler ve önceki sürümler dahil), PDF paylaş/indir,
+  JSON yedekle/geri yükle.
 
 ## Web sürümü (GitHub Pages)
 Aynı uygulama tarayıcıdan da açılır: **https://camperfire51.github.io/borc-defteri/**
